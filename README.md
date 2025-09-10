@@ -92,7 +92,7 @@ java -jar build/libs/thread-dump-analyzer.jar
 ```
 
 ### 접속
-웹 브라우저에서 `http://localhost:8080`으로 접속
+웹 브라우저에서 `http://localhost:38089`으로 접속
 
 ## 사용법
 
