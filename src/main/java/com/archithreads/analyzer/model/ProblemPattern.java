@@ -1,5 +1,8 @@
 package com.archithreads.analyzer.model;
 
+import java.util.List;
+import java.util.ArrayList;
+
 public class ProblemPattern {
     private String patternName;
     private String description;
@@ -50,8 +53,8 @@ public class ProblemPattern {
     public String getSolution() { return solution; }
     public void setSolution(String solution) { this.solution = solution; }
 
-    public java.util.List<String> getRelatedThreads() { return relatedThreads; }
-    public void setRelatedThreads(java.util.List<String> relatedThreads) { this.relatedThreads = relatedThreads; }
+    public List<String> getRelatedThreads() { return relatedThreads; }
+    public void setRelatedThreads(List<String> relatedThreads) { this.relatedThreads = relatedThreads; }
 
     public String getPatternType() { return patternType; }
     public void setPatternType(String patternType) { this.patternType = patternType; }

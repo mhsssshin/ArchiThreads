@@ -1,7 +1,7 @@
 server:
   port: 38089
   servlet:
-    context-path: /
+    context-path: /ata
 
 spring:
   application:
