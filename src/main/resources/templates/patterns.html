@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>패턴 정보 - Thread Dump Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .pattern-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            transition: transform 0.2s ease;
+        }
+        .pattern-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .pattern-header {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            cursor: pointer;
+        }
+        .pattern-content {
+            padding: 1rem;
+            display: none;
+        }
+        .pattern-content.show {
+            display: block;
+        }
+        .severity-badge {
+            font-size: 0.8rem;
+        }
+        .category-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 2rem 0 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-microscope me-2"></i>
+                Thread Dump Analyzer
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    홈으로
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="display-6 mb-4">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Thread Dump 패턴 정보
+                </h1>
+                <p class="lead text-muted mb-5">
+                    Thread Dump Analyzer가 감지할 수 있는 30가지 이상의 문제 패턴에 대한 상세 정보입니다.
+                </p>
+            </div>
+        </div>
+
+        <!-- Database Patterns -->
+        <div class="category-header">
+            <h3><i class="fas fa-database me-2"></i>데이터베이스 관련 패턴</h3>
+        </div>
+        
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('db-deadlock')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">DATABASE_DEADLOCK</h5>
+                    <span class="badge bg-danger severity-badge">HIGH</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="db-deadlock">
+                <p><strong>설명:</strong> 데이터베이스 트랜잭션 간 데드락이 발생한 경우</p>
+                <p><strong>감지 방법:</strong> java.sql.Connection, oracle.jdbc, mysql.jdbc, postgresql.jdbc 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 트랜잭션 순서 불일치, 동시성 제어 부족</p>
+                <p><strong>해결 방안:</strong> 트랜잭션 순서 일관성 유지, 데드락 감지 및 해결 로직 추가</p>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('db-timeout')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">DATABASE_TIMEOUT</h5>
+                    <span class="badge bg-warning severity-badge">MEDIUM</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="db-timeout">
+                <p><strong>설명:</strong> 데이터베이스 쿼리 타임아웃이 발생한 경우</p>
+                <p><strong>감지 방법:</strong> SQLTimeoutException, Connection timeout, Query timeout 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 느린 쿼리, 인덱스 부족, 네트워크 지연</p>
+                <p><strong>해결 방안:</strong> 쿼리 최적화, 인덱스 추가, 타임아웃 설정 조정</p>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('db-pool')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">DATABASE_POOL_EXHAUSTED</h5>
+                    <span class="badge bg-warning severity-badge">MEDIUM</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="db-pool">
+                <p><strong>설명:</strong> 데이터베이스 연결 풀이 고갈된 경우</p>
+                <p><strong>감지 방법:</strong> ConnectionPool, DataSource, HikariPool 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 연결 풀 크기 부족, 연결 누수</p>
+                <p><strong>해결 방안:</strong> 연결 풀 크기 증가, 연결 누수 확인 및 수정</p>
+            </div>
+        </div>
+
+        <!-- Memory Patterns -->
+        <div class="category-header">
+            <h3><i class="fas fa-memory me-2"></i>메모리 관련 패턴</h3>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('oom')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">OUT_OF_MEMORY</h5>
+                    <span class="badge bg-danger severity-badge">CRITICAL</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="oom">
+                <p><strong>설명:</strong> JVM 힙 메모리 부족으로 인한 OutOfMemoryError</p>
+                <p><strong>감지 방법:</strong> OutOfMemoryError, GC overhead, PermGen, Metaspace 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 메모리 누수, 힙 크기 부족, 대용량 객체 생성</p>
+                <p><strong>해결 방안:</strong> 힙 메모리 크기 증가, 메모리 누수 확인 및 수정</p>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('memory-leak')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">MEMORY_LEAK</h5>
+                    <span class="badge bg-warning severity-badge">MEDIUM</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="memory-leak">
+                <p><strong>설명:</strong> 메모리 누수가 의심되는 패턴</p>
+                <p><strong>감지 방법:</strong> WeakReference, SoftReference, PhantomReference 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 객체 참조 누수, 캐시 미스, 리스너 미해제</p>
+                <p><strong>해결 방안:</strong> 참조 해제 확인, 캐시 크기 조정, 리스너 정리</p>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('gc-pressure')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">GC_PRESSURE</h5>
+                    <span class="badge bg-info severity-badge">MEDIUM</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="gc-pressure">
+                <p><strong>설명:</strong> 과도한 가비지 컬렉션으로 인한 성능 저하</p>
+                <p><strong>감지 방법:</strong> GC, GarbageCollector, Full GC 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 과도한 객체 생성, GC 튜닝 부족</p>
+                <p><strong>해결 방안:</strong> GC 튜닝 수행, 메모리 사용량 최적화</p>
+            </div>
+        </div>
+
+        <!-- Network Patterns -->
+        <div class="category-header">
+            <h3><i class="fas fa-network-wired me-2"></i>네트워크 관련 패턴</h3>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('network-timeout')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">NETWORK_TIMEOUT</h5>
+                    <span class="badge bg-info severity-badge">MEDIUM</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="network-timeout">
+                <p><strong>설명:</strong> 네트워크 연결 타임아웃이 발생한 경우</p>
+                <p><strong>감지 방법:</strong> SocketTimeoutException, ConnectException, UnknownHostException 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 네트워크 지연, 서버 응답 지연, 방화벽 설정</p>
+                <p><strong>해결 방안:</strong> 네트워크 타임아웃 설정 조정, 연결 풀링 고려</p>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('http-client')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">HTTP_CLIENT_BLOCKED</h5>
+                    <span class="badge bg-info severity-badge">MEDIUM</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="http-client">
+                <p><strong>설명:</strong> HTTP 클라이언트가 블록된 경우</p>
+                <p><strong>감지 방법:</strong> HttpClient, ApacheHttpClient, OkHttp 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> HTTP 요청 지연, 서버 응답 부족</p>
+                <p><strong>해결 방안:</strong> HTTP 타임아웃 설정, 비동기 HTTP 클라이언트 사용</p>
+            </div>
+        </div>
+
+        <!-- Synchronization Patterns -->
+        <div class="category-header">
+            <h3><i class="fas fa-lock me-2"></i>동기화 관련 패턴</h3>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('deadlock')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">DEADLOCK</h5>
+                    <span class="badge bg-danger severity-badge">HIGH</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="deadlock">
+                <p><strong>설명:</strong> Java 레벨 데드락이 발생한 경우</p>
+                <p><strong>감지 방법:</strong> deadlock, Found Java-level deadlock 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 락 순서 불일치, 순환 대기</p>
+                <p><strong>해결 방안:</strong> 락 순서 일관성 유지, 락 타임아웃 설정</p>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('lock-contention')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">LOCK_CONTENTION</h5>
+                    <span class="badge bg-warning severity-badge">MEDIUM</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="lock-contention">
+                <p><strong>설명:</strong> 락 경합이 발생한 경우</p>
+                <p><strong>감지 방법:</strong> synchronized, ReentrantLock, ReadWriteLock 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 동일한 락에 대한 과도한 경합</p>
+                <p><strong>해결 방안:</strong> 락의 세분화, 락 없는 자료구조 사용</p>
+            </div>
+        </div>
+
+        <!-- Thread Pool Patterns -->
+        <div class="category-header">
+            <h3><i class="fas fa-layer-group me-2"></i>스레드 풀 관련 패턴</h3>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('thread-pool')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">THREAD_POOL_EXHAUSTED</h5>
+                    <span class="badge bg-warning severity-badge">HIGH</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="thread-pool">
+                <p><strong>설명:</strong> 스레드 풀이 고갈된 경우</p>
+                <p><strong>감지 방법:</strong> ThreadPoolExecutor, ForkJoinPool, ExecutorService 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 스레드 풀 크기 부족, 작업 큐 크기 부족</p>
+                <p><strong>해결 방안:</strong> 스레드 풀 크기 증가, 작업 큐 크기 조정</p>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('thread-starvation')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">THREAD_STARVATION</h5>
+                    <span class="badge bg-info severity-badge">MEDIUM</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="thread-starvation">
+                <p><strong>설명:</strong> 스레드 기아 상태가 발생한 경우</p>
+                <p><strong>감지 방법:</strong> park, unpark, LockSupport 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 스레드 스케줄링 문제, 우선순위 불균형</p>
+                <p><strong>해결 방안:</strong> 스레드 우선순위 조정, 스케줄링 정책 검토</p>
+            </div>
+        </div>
+
+        <!-- Framework Patterns -->
+        <div class="category-header">
+            <h3><i class="fas fa-cogs me-2"></i>프레임워크 관련 패턴</h3>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('spring-bean')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">SPRING_BEAN_CREATION</h5>
+                    <span class="badge bg-info severity-badge">MEDIUM</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="spring-bean">
+                <p><strong>설명:</strong> Spring Bean 생성 중 블록이 발생한 경우</p>
+                <p><strong>감지 방법:</strong> BeanFactory, ApplicationContext, @Autowired 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> Spring 컨텍스트 초기화 지연, Bean 의존성 문제</p>
+                <p><strong>해결 방안:</strong> Bean 의존성 최적화, 지연 초기화 고려</p>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('hibernate-session')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">HIBERNATE_SESSION</h5>
+                    <span class="badge bg-info severity-badge">MEDIUM</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="hibernate-session">
+                <p><strong>설명:</strong> Hibernate 세션 관련 블록이 발생한 경우</p>
+                <p><strong>감지 방법:</strong> SessionFactory, Hibernate, EntityManager 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 세션 관리 문제, 트랜잭션 경계 설정 오류</p>
+                <p><strong>해결 방안:</strong> 세션 관리 최적화, 트랜잭션 경계 명확화</p>
+            </div>
+        </div>
+
+        <!-- Cache Patterns -->
+        <div class="category-header">
+            <h3><i class="fas fa-database me-2"></i>캐시 관련 패턴</h3>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('cache-miss')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">CACHE_MISS</h5>
+                    <span class="badge bg-secondary severity-badge">LOW</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="cache-miss">
+                <p><strong>설명:</strong> 캐시 미스가 발생한 경우</p>
+                <p><strong>감지 방법:</strong> Cache, Redis, Memcached, EhCache 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 캐시 효율성 저하, 캐시 크기 부족</p>
+                <p><strong>해결 방안:</strong> 캐시 전략 재검토, 캐시 크기 조정</p>
+            </div>
+        </div>
+
+        <!-- Messaging Patterns -->
+        <div class="category-header">
+            <h3><i class="fas fa-envelope me-2"></i>메시징 관련 패턴</h3>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('message-queue')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">MESSAGE_QUEUE_BLOCKED</h5>
+                    <span class="badge bg-info severity-badge">MEDIUM</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="message-queue">
+                <p><strong>설명:</strong> 메시지 큐 처리가 블록된 경우</p>
+                <p><strong>감지 방법:</strong> JMS, RabbitMQ, Kafka, ActiveMQ 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 메시지 큐 처리 지연, 처리량 부족</p>
+                <p><strong>해결 방안:</strong> 메시지 큐 설정 최적화, 처리량 조정</p>
+            </div>
+        </div>
+
+        <!-- Additional Patterns -->
+        <div class="category-header">
+            <h3><i class="fas fa-tools me-2"></i>기타 시스템 패턴</h3>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('file-io')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">FILE_IO_BLOCKED</h5>
+                    <span class="badge bg-secondary severity-badge">LOW</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="file-io">
+                <p><strong>설명:</strong> 파일 I/O가 블록된 경우</p>
+                <p><strong>감지 방법:</strong> FileInputStream, FileOutputStream, RandomAccessFile 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 파일 시스템 I/O 지연</p>
+                <p><strong>해결 방안:</strong> 비동기 I/O 사용, I/O 타임아웃 설정</p>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('logging')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">LOGGING_BLOCKED</h5>
+                    <span class="badge bg-secondary severity-badge">LOW</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="logging">
+                <p><strong>설명:</strong> 로깅이 블록된 경우</p>
+                <p><strong>감지 방법:</strong> Logger, Log4j, Logback, SLF4J 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 로깅 시스템 지연</p>
+                <p><strong>해결 방안:</strong> 비동기 로깅 사용, 로그 레벨 조정</p>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('security')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">SECURITY_MANAGER</h5>
+                    <span class="badge bg-info severity-badge">MEDIUM</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="security">
+                <p><strong>설명:</strong> 보안 관리자 관련 블록이 발생한 경우</p>
+                <p><strong>감지 방법:</strong> SecurityManager, AccessController, PrivilegedAction 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 보안 정책 검사 지연</p>
+                <p><strong>해결 방안:</strong> 보안 정책 최적화, 권한 사전 부여</p>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('serialization')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">SERIALIZATION_BLOCKED</h5>
+                    <span class="badge bg-secondary severity-badge">LOW</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="serialization">
+                <p><strong>설명:</strong> 직렬화/역직렬화가 블록된 경우</p>
+                <p><strong>감지 방법:</strong> ObjectInputStream, ObjectOutputStream, Serializable 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 객체 직렬화 지연</p>
+                <p><strong>해결 방안:</strong> 직렬화 최적화, 비동기 처리 사용</p>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('reflection')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">REFLECTION_OVERUSE</h5>
+                    <span class="badge bg-secondary severity-badge">LOW</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="reflection">
+                <p><strong>설명:</strong> 리플렉션 사용이 과도한 경우</p>
+                <p><strong>감지 방법:</strong> Class.forName, Method.invoke, Constructor.newInstance 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 리플렉션 성능 오버헤드</p>
+                <p><strong>해결 방안:</strong> 리플렉션 사용 최소화, 캐싱 고려</p>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('jit')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">JIT_COMPILATION</h5>
+                    <span class="badge bg-secondary severity-badge">LOW</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="jit">
+                <p><strong>설명:</strong> JIT 컴파일이 진행 중인 경우</p>
+                <p><strong>감지 방법:</strong> Compiler, JIT, HotSpot 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> JIT 컴파일 오버헤드</p>
+                <p><strong>해결 방안:</strong> JIT 컴파일 최적화, AOT 컴파일 사용</p>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('monitoring')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">JMX_MONITORING</h5>
+                    <span class="badge bg-secondary severity-badge">LOW</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="monitoring">
+                <p><strong>설명:</strong> JMX 모니터링이 활성화된 경우</p>
+                <p><strong>감지 방법:</strong> MBeanServer, JMX, ManagementFactory 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 모니터링 오버헤드</p>
+                <p><strong>해결 방안:</strong> 모니터링 설정 최적화, 샘플링 주기 조정</p>
+            </div>
+        </div>
+
+        <div class="pattern-card">
+            <div class="pattern-header" onclick="togglePattern('system-props')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">SYSTEM_PROPERTIES_ACCESS</h5>
+                    <span class="badge bg-secondary severity-badge">LOW</span>
+                </div>
+            </div>
+            <div class="pattern-content" id="system-props">
+                <p><strong>설명:</strong> 시스템 프로퍼티 접근이 발생한 경우</p>
+                <p><strong>감지 방법:</strong> System.getProperty, System.setProperty 관련 스택 트레이스</p>
+                <p><strong>근본 원인:</strong> 시스템 프로퍼티 접근 오버헤드</p>
+                <p><strong>해결 방안:</strong> 시스템 프로퍼티 캐싱으로 성능 개선</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function togglePattern(patternId) {
+            const content = document.getElementById(patternId);
+            const icon = content.previousElementSibling.querySelector('.fa-chevron-down, .fa-chevron-up');
+            
+            if (content.classList.contains('show')) {
+                content.classList.remove('show');
+                if (icon) {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                }
+            } else {
+                content.classList.add('show');
+                if (icon) {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
